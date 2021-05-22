@@ -36,6 +36,7 @@
           label="Score">
       </el-table-column>
     </el-table>
+    <p class="footnote">Site was visited {{num_visits}} times, {{num_completions}} completion requests were made</p>
   </div>
 </template>
 
@@ -46,6 +47,7 @@ import 'prismjs/components/prism-java';
 import 'prismjs/components/prism-python';
 import 'prismjs/components/prism-kotlin';
 import 'prismjs/themes/prism-tomorrow.css'; // import syntax highlighting styles
+import countapi from 'countapi-js';
 import 'vue-prism-editor/dist/prismeditor.min.css'; // import the styles somewhere
 import '../themes/prism-material-light.css'
 import {PrismEditor} from 'vue-prism-editor';
@@ -76,7 +78,9 @@ export default {
     selected_meta: language_to_meta['python'],
     api_key: '',
     completions: [],
-    error_message: ''
+    error_message: '',
+    num_visits: 0,
+    num_completions: 0
   }),
   methods: {
     highlighter(code) {
@@ -94,6 +98,7 @@ export default {
           break;
         case 200:
           this.completions = (await response.json()).completions
+          this.num_completions = (await countapi.update('flcc.showcase', 'completions', 1)).value
           break;
         case 204:
           this.$message({message: 'Request cancelled by server', type: 'warning'})
@@ -101,8 +106,12 @@ export default {
         default:
           this.$message({message: 'Whoops, something went wrong', type: 'error'})
       }
-    }
+    },
   },
+  async created() {
+    this.num_visits = (await countapi.update('flcc.showcase', 'visits', 1)).value
+    this.num_completions = (await countapi.get('flcc.showcase', 'completions')).value
+  }
 }
 </script>
 
@@ -171,6 +180,10 @@ a {
   justify-self: center;
   width: 100%;
   box-shadow: 0 1px 5px 0 rgb(0 0 0 / 10%);
+}
+
+.footnote {
+  color: #c7c7c7;
 }
 
 </style>
