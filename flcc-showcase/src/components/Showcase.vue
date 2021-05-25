@@ -21,7 +21,12 @@
                       :highlight="highlighter" line-numbers></prism-editor>
       </div>
     </el-card>
-    <el-input class="api-key-input" placeholder="Input API key, please" v-model="api_key"></el-input>
+    <el-input class="api-key-input" placeholder="Input API key, please" v-model="api_key" v-if="show_key_input">
+      <i
+          class="el-icon-key el-input__icon"
+          slot="suffix">
+      </i>
+    </el-input>
     <el-button :plain="true" class="complete-button" @click="complete">Complete</el-button>
     <el-table
         v-if="completions.length > 0"
@@ -36,7 +41,7 @@
           label="Score">
       </el-table-column>
     </el-table>
-    <p class="footnote">Site was visited {{num_visits}} times, {{num_completions}} completion requests were made</p>
+    <p class="footnote">Site was visited {{ num_visits }} times, {{ num_completions }} completion requests were made</p>
   </div>
 </template>
 
@@ -77,6 +82,7 @@ export default {
     selected_language: 'python',
     selected_meta: language_to_meta['python'],
     api_key: '',
+    show_key_input: true,
     completions: [],
     error_message: '',
     num_visits: 0,
@@ -95,6 +101,7 @@ export default {
       switch (response.status) {
         case 403:
           this.$message({message: 'API key is incorrect', type: 'error'})
+            this.show_key_input=true
           break;
         case 200:
           this.completions = (await response.json()).completions
@@ -111,6 +118,12 @@ export default {
   async created() {
     this.num_visits = (await countapi.update('flcc.showcase', 'visits', 1)).value
     this.num_completions = (await countapi.get('flcc.showcase', 'completions')).value
+    let uri = window.location.search.substring(1);
+    let api_key_param = new URLSearchParams(uri).get("api_key");
+    if (api_key_param != null) {
+      this.api_key = api_key_param
+      this.show_key_input = false
+    }
   }
 }
 </script>
@@ -180,6 +193,13 @@ a {
   justify-self: center;
   width: 100%;
   box-shadow: 0 1px 5px 0 rgb(0 0 0 / 10%);
+}
+
+.api-key-input-label {
+  color: #c7c7c7;
+  margin-left: 1.5%;
+  width: fit-content;
+  font-size: 14px;
 }
 
 .footnote {
